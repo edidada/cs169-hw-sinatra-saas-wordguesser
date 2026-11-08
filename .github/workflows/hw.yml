@@ -1,0 +1,32 @@
+name: CS169 hw-sinatra-saas-wordguesser
+on:
+  push:
+    branches: [edidada/cs169-hw]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wordguesser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Run official specs (pending examples skipped as shipped)
+        run: bundle exec rspec
+      - name: Run full spec set with pending states lifted (model completeness check)
+        run: |
+          ruby -e 'File.write("/tmp/wg_spec.rb", File.read("spec/wordguesser_game_spec.rb").gsub(/, *pending: *true/, ""))'
+          bundle exec rspec /tmp/wg_spec.rb --format documentation
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordguesser-results
+          path: |
+            lib/wordguesser_game.rb
+            spec/wordguesser_game_spec.rb
+          if-no-files-found: warn
